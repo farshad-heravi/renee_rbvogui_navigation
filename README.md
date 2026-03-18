@@ -3,6 +3,9 @@
 <!-- Add your recorded simulation navigation video here -->
 <!-- Example: ![Navigation Demo](media/navigation_demo.gif) or ![Navigation Demo](media/navigation_demo.mp4) -->
 
+![renee_rbvogui_navigation_lq](https://github.com/user-attachments/assets/139f96fa-719e-4f25-a99d-2fbfcc97554a)
+
+
 ROS 2 navigation stack for the Renee robot (RB-VOGUI platform). This package provides Nav2-based autonomous navigation, waypoint following, and mission planning for the Robotnik RB-VOGUI mobile base.
 
 ---
