@@ -1,0 +1,171 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="room_layout">
+    <physics type='ode'>
+      <max_step_size>0.02</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>50</real_time_update_rate>
+    </physics>
+    <plugin name='gz::sim::systems::Physics' filename='libgz-sim-physics-system.so'/>
+    <plugin name='gz::sim::systems::UserCommands' filename='libgz-sim-user-commands-system.so'/>
+    <plugin name='gz::sim::systems::SceneBroadcaster' filename='libgz-sim-scene-broadcaster-system.so'/>
+    <plugin name="gz::sim::systems::Sensors" filename="libgz-sim-sensors-system.so">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin name="gz::sim::systems::Imu" filename="libgz-sim-imu-system.so"/>
+    <plugin name="gz::sim::systems::NavSat" filename="libgz-sim-navsat-system.so"/>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <pose>5 7.5 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>10 15</size></plane></geometry>
+          <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.6 0.6 0.6 1</diffuse>
+
+            <pbr>
+              <metal>
+                <albedo_map>texture/concrete_floor.jpg</albedo_map>
+              </metal>
+            </pbr>
+
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="big_north"><static>true</static><pose>5 15 1 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>8 0.1 2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>10 0.1 2</size></box></geometry>
+          <material><ambient>0.4 0.4 0.4 1</ambient><diffuse>0.4 0.4 0.4 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="big_south"><static>true</static><pose>5 0 1 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>8 0.1 2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>10 0.1 2</size></box></geometry>
+          <material><ambient>0.4 0.4 0.4 1</ambient><diffuse>0.4 0.4 0.4 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="big_east"><static>true</static><pose>10 7.5 1 0 0 1.5708</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>10 0.1 2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>15 0.1 2</size></box></geometry>
+          <material><ambient>0.4 0.4 0.4 1</ambient><diffuse>0.4 0.4 0.4 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="big_west"><static>true</static><pose>0 7.5 1 0 0 1.5708</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>10 0.1 2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>15 0.1 2</size></box></geometry>
+          <material><ambient>0.4 0.4 0.4 1</ambient><diffuse>0.4 0.4 0.4 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="small_inner_east"><static>true</static><pose>5 2.5 1 0 0 1.5708</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>5 0.1 2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>5 0.1 2</size></box></geometry>
+          <material><ambient>0.4 0.4 0.4 1</ambient><diffuse>0.4 0.4 0.4 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="small_inner_south_part"><static>true</static><pose>3.5 5 1 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>3 0.1 2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>3 0.1 2</size></box></geometry>
+          <material><ambient>0.4 0.4 0.4 1</ambient><diffuse>0.4 0.4 0.4 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="storage_wall_south"><static>true</static><pose>4 8 1 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>8 0.1 2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>8 0.1 2</size></box></geometry>
+          <material><ambient>0.4 0.4 0.4 1</ambient><diffuse>0.4 0.4 0.4 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- add shelves -->
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_0</name>
+      <pose>7.0 14.5 0 0 0 0</pose>
+      <scale>0.3 0.3 0.3</scale>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_1</name>
+      <pose>3.0 14.5 0 0 0 0</pose>
+      <scale>0.3 0.3 0.3</scale>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_2</name>
+      <pose>0.5 10.5 0 0 0 1.5708</pose>
+      <scale>0.3 0.3 0.3</scale>
+    </include>
+    <!-- add table -->
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Table</uri>
+      <name>table_0</name>
+      <pose>0.5 13.0 0 0 0 1.5708</pose>
+      <scale>0.3 0.3 0.3</scale>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Table</uri>
+      <name>table_1</name>
+      <pose>5.5 3.0 -0.25 0 0 1.5708</pose>
+      <scale>0.3 0.3 0.3</scale>
+    </include>
+    <!-- construction conse -->
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Construction Cone</uri>
+      <name>construction_cone_0</name>
+      <pose>5.5 4.7 0 0 0 0</pose>
+      <scale>0.3 0.3 0.3</scale>
+    </include>
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Construction Cone</uri>
+      <name>construction_cone_1</name>
+      <pose>6.5 4.7 0 0 0 0</pose>
+      <scale>0.3 0.3 0.3</scale>
+    </include>
+    <!-- office chair -->
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/OfficeChairGrey</uri>
+      <name>office_chair_0</name>
+      <pose>6.0 3.0 0 0 0 -1.5708</pose>
+      <scale>0.3 0.3 0.3</scale>
+    </include>
+
+    <!-- add exhauster cabinet -->
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Extinguisher cabinet</uri>
+      <name>exhauster_cabin_0</name>
+      <pose>0.15 7.5 0.25 0 0 0</pose>
+      <scale>0.3 0.3 0.3</scale>
+    </include>
+
+  </world>
+</sdf>
