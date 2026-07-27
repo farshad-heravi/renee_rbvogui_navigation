@@ -114,6 +114,10 @@
               <size>0.1 8 2</size>
             </box>
           </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
         </visual>
       </link>
     </model>
@@ -134,6 +138,10 @@
               <size>0.1 8 2</size>
             </box>
           </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
         </visual>
       </link>
     </model>
