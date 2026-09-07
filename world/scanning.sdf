@@ -147,83 +147,70 @@
     </model>
 
     <!--
-      Tooling for generating a thin mapping outline of the Campetella machine.
+      Four rectangular cart supports.  One north/south pair is aligned with
+      the extraction axis (x=0); the other pair is at the free end of the
+      transversal axis (x=-2.8455).  Together they form a rectangle, with
+      the north and south support centers separated by 1.60 m.
     -->
-    <!-- <model name="campetella_mapping_outline">
+    <model name="campetella_mapping_cart_supports">
       <static>true</static>
       <pose>1.0 0.0 0.0 0 0 0</pose>
 
-      <link name="north_edge">
-        <pose>-1.17275 0.34705 0.15 0 0 0</pose>
+      <link name="extraction_south_support">
+        <pose>0.0 -1.15295 0.15 0 0 0</pose>
         <collision name="collision">
-          <geometry>
-            <box><size>3.3455 0.05 0.30</size></box>
-          </geometry>
+          <geometry><box><size>0.50 0.20 0.30</size></box></geometry>
         </collision>
         <visual name="visual">
-          <geometry>
-            <box><size>3.3455 0.05 0.30</size></box>
-          </geometry>
+          <geometry><box><size>0.50 0.20 0.30</size></box></geometry>
           <material>
-            <ambient>0.35 0.35 0.35 1</ambient>
-            <diffuse>0.35 0.35 0.35 1</diffuse>
+            <ambient>0.08 0.08 0.08 1</ambient>
+            <diffuse>0.12 0.12 0.12 1</diffuse>
           </material>
         </visual>
       </link>
 
-      <link name="south_edge">
-        <pose>-1.17275 -1.21385 0.15 0 0 0</pose>
+      <link name="extraction_north_support">
+        <pose>0.0 0.44705 0.15 0 0 0</pose>
         <collision name="collision">
-          <geometry>
-            <box><size>3.3455 0.05 0.30</size></box>
-          </geometry>
+          <geometry><box><size>0.50 0.20 0.30</size></box></geometry>
         </collision>
         <visual name="visual">
-          <geometry>
-            <box><size>3.3455 0.05 0.30</size></box>
-          </geometry>
+          <geometry><box><size>0.50 0.20 0.30</size></box></geometry>
           <material>
-            <ambient>0.35 0.35 0.35 1</ambient>
-            <diffuse>0.35 0.35 0.35 1</diffuse>
+            <ambient>0.08 0.08 0.08 1</ambient>
+            <diffuse>0.12 0.12 0.12 1</diffuse>
           </material>
         </visual>
       </link>
 
-      <link name="west_edge">
-        <pose>-2.8455 -0.4334 0.15 0 0 0</pose>
+      <link name="transversal_end_south_support">
+        <pose>-2.8455 -1.15295 0.15 0 0 0</pose>
         <collision name="collision">
-          <geometry>
-            <box><size>0.05 1.5609 0.30</size></box>
-          </geometry>
+          <geometry><box><size>0.50 0.20 0.30</size></box></geometry>
         </collision>
         <visual name="visual">
-          <geometry>
-            <box><size>0.05 1.5609 0.30</size></box>
-          </geometry>
+          <geometry><box><size>0.50 0.20 0.30</size></box></geometry>
           <material>
-            <ambient>0.35 0.35 0.35 1</ambient>
-            <diffuse>0.35 0.35 0.35 1</diffuse>
+            <ambient>0.08 0.08 0.08 1</ambient>
+            <diffuse>0.12 0.12 0.12 1</diffuse>
           </material>
         </visual>
       </link>
 
-      <link name="east_edge">
-        <pose>0.5 -0.4334 0.15 0 0 0</pose>
+      <link name="transversal_end_north_support">
+        <pose>-2.8455 0.44705 0.15 0 0 0</pose>
         <collision name="collision">
-          <geometry>
-            <box><size>0.05 1.5609 0.30</size></box>
-          </geometry>
+          <geometry><box><size>0.50 0.20 0.30</size></box></geometry>
         </collision>
         <visual name="visual">
-          <geometry>
-            <box><size>0.05 1.5609 0.30</size></box>
-          </geometry>
+          <geometry><box><size>0.50 0.20 0.30</size></box></geometry>
           <material>
-            <ambient>0.35 0.35 0.35 1</ambient>
-            <diffuse>0.35 0.35 0.35 1</diffuse>
+            <ambient>0.08 0.08 0.08 1</ambient>
+            <diffuse>0.12 0.12 0.12 1</diffuse>
           </material>
         </visual>
       </link>
-    </model> -->
+    </model>
   </world>
 </sdf>
