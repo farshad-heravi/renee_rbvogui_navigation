@@ -33,6 +33,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'collision_mode = renee_rbvogui_navigation.collision_mode:main',
         ],
     },
 )

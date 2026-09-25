@@ -1,0 +1,109 @@
+/**:
+  collision_monitor:
+    ros__parameters:
+      # Real-robot collision monitor: last gate between Nav2 (controller_server
+      # + behavior_server, remapped to cmd_vel_nav by nav2_task.launch.py when
+      # use_collision_monitor:=true) and /robot/move_base/cmd_vel, which the
+      # vogui_ros1_ros2_bridge relays into the robot's twist_mux.
+      #
+      # Why this exists: the rover's own safety chain is not active — both
+      # lasers are SICK TiM5xx (non-safety), ROBOT_SAFETY_LASER=none, and the
+      # Flexisoft safety PLC at 192.168.0.250 is unreachable, so nothing on
+      # the robot stops it before a collision. This is a software safeguard,
+      # NOT a certified safety function; keep the physical e-stop at hand.
+      #
+      # Modes (which laser feeds the zones): both | front | rear | none.
+      # Set at launch with collision_mode:=<mode> (navigation_real_entrypoint.sh
+      # reads $COLLISION_MODE), or switch at runtime with
+      # `ros2 run renee_rbvogui_navigation collision_mode <mode>`. A mode is
+      # just the *.enabled flags below: each laser has its own Stop/Slow
+      # polygons fed only by that laser (sources_names), plus its source.
+      base_frame_id: robot_base_link
+      odom_frame_id: robot_odom
+      cmd_vel_in_topic: cmd_vel_nav
+      cmd_vel_out_topic: move_base/cmd_vel
+      # Plain Twist in and out: the bridge only relays geometry_msgs/Twist on
+      # move_base/cmd_vel (see controller_server_real.yaml).
+      enable_stamped_cmd_vel: false
+      state_topic: collision_monitor_state
+      transform_tolerance: 0.5
+      # An enabled source with no fresh scan within this window makes the
+      # monitor stop the robot (fail-safe on a dead laser or bridge).
+      source_timeout: 1.0
+      # false: correcting scans for base motion needs odom TF at the scan
+      # stamp, which over the bridge is often just newer than the latest TF
+      # ("extrapolation into the future") -> invalid source -> brief false
+      # stops. At <=0.1 m/s the uncorrected shift is ~1 cm per 100 ms.
+      base_shift_correction: false
+      stop_pub_timeout: 2.0
+      use_realtime_priority: false
+
+      # Zones are rings around the footprint ([[0.6,-0.35],[0.6,0.35],
+      # [-0.6,0.35],[-0.6,-0.35]]), not filled rectangles: the front laser
+      # sees the robot's own body at ~(0.54, 0.03) in robot_base_link, inside
+      # the footprint, which would otherwise hold the robot in a permanent
+      # stop; the hole is 5 cm longer than the footprint in x because it also
+      # returns a stray body point at ~(0.61, -0.22). Each ring is one "keyhole" polygon — outer rectangle, a
+      # zero-width slit along y=0, then the footprint traced the other way.
+      # Nav2's even-odd point-in-polygon test skips horizontal edges, so the
+      # slit is invisible and the footprint interior counts as outside.
+      # Stop: footprint + 0.10 m on all sides (front/back band is effectively
+      #       0.05-0.10 m because of the 5 cm longer hole).
+      # Slow: footprint + 0.30 m on all sides.
+      # Measured from the body, not the lasers: the lasers sit inside the
+      # footprint at opposite corners ((0.53, 0.33) front, (-0.53, -0.33)
+      # rear), so circles around them would leave the front-right and
+      # rear-left of the body uncovered.
+      # Previously +0.20/+0.15 (stop) and +0.50/+0.40 (slow).
+      polygons: ["FrontStop", "FrontSlow", "RearStop", "RearSlow"]
+      FrontStop:
+        type: polygon
+        points: "[[0.7,0],[0.7,0.45],[-0.7,0.45],[-0.7,-0.45],[0.7,-0.45],[0.7,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
+        action_type: stop
+        sources_names: ["front_scan"]
+        # >1 so a single spurious return can't stop the robot
+        min_points: 3
+        visualize: true
+        polygon_pub_topic: collision_monitor/front_stop
+        enabled: true
+      FrontSlow:
+        type: polygon
+        points: "[[0.9,0],[0.9,0.65],[-0.9,0.65],[-0.9,-0.65],[0.9,-0.65],[0.9,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
+        action_type: slowdown
+        slowdown_ratio: 0.5
+        sources_names: ["front_scan"]
+        min_points: 3
+        visualize: true
+        polygon_pub_topic: collision_monitor/front_slow
+        enabled: true
+      RearStop:
+        type: polygon
+        points: "[[0.7,0],[0.7,0.45],[-0.7,0.45],[-0.7,-0.45],[0.7,-0.45],[0.7,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
+        action_type: stop
+        sources_names: ["rear_scan"]
+        min_points: 3
+        visualize: true
+        polygon_pub_topic: collision_monitor/rear_stop
+        enabled: true
+      RearSlow:
+        type: polygon
+        points: "[[0.9,0],[0.9,0.65],[-0.9,0.65],[-0.9,-0.65],[0.9,-0.65],[0.9,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
+        action_type: slowdown
+        slowdown_ratio: 0.5
+        sources_names: ["rear_scan"]
+        min_points: 3
+        visualize: true
+        polygon_pub_topic: collision_monitor/rear_slow
+        enabled: true
+
+      # Front laser: front-left corner, sees front + left side.
+      # Rear laser: rear-right corner, sees rear + right side.
+      observation_sources: ["front_scan", "rear_scan"]
+      front_scan:
+        type: scan
+        topic: /robot/front_laser/scan
+        enabled: true
+      rear_scan:
+        type: scan
+        topic: /robot/rear_laser/scan
+        enabled: true

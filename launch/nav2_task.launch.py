@@ -27,32 +27,120 @@ from launch import LaunchDescription
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
-from launch.actions import GroupAction
+from launch.actions import GroupAction, DeclareLaunchArgument, OpaqueFunction
+from launch.conditions import IfCondition
+from launch.substitutions import PythonExpression
+
+from renee_rbvogui_navigation.collision_mode import mode_parameters
+
+
+def _collision_monitor(context, collision_monitor_config, use_sim):
+    # OpaqueFunction so the initial collision_mode goes through the same
+    # mode -> *.enabled table as the runtime `collision_mode` switcher.
+    mode = LaunchConfiguration('collision_mode').perform(context)
+    return [Node(
+        package='nav2_collision_monitor',
+        executable='collision_monitor',
+        name='collision_monitor',
+        output='screen',
+        parameters=[collision_monitor_config, {'use_sim_time': use_sim},
+                    mode_parameters(mode)],
+    )]
 
 def generate_launch_description():
-    
+
     robot_id = LaunchConfiguration("robot_id")
     use_sim = LaunchConfiguration("use_sim")
     config_folder = LaunchConfiguration("config_folder")
+    cmd_vel_topic = LaunchConfiguration("cmd_vel_topic")
+    use_collision_monitor = LaunchConfiguration("use_collision_monitor")
+    collision_monitor_config = LaunchConfiguration("collision_monitor_config")
+
+    # With the collision monitor on, controller_server/behavior_server publish
+    # to cmd_vel_nav and collision_monitor forwards (stopped/slowed) commands
+    # to the topic named in its config's cmd_vel_out_topic; otherwise they
+    # publish straight to cmd_vel_topic as before.
+    nav_cmd_vel_topic = PythonExpression([
+        "'cmd_vel_nav' if '", use_collision_monitor, "'.lower() == 'true' else '",
+        cmd_vel_topic, "'"
+    ])
+
+    declared_arguments = [
+        # On the real robot, cmd_vel must go to move_base/cmd_vel instead
+        # (vogui_ros1_ros2_bridge only relays that topic into the robot's
+        # ROS1 twist_mux, so teleop/e-stop still arbitrate over Nav2 — see
+        # vogui_ros1_ros2_bridge/config/bridge.yaml).
+        DeclareLaunchArgument(
+            "cmd_vel_topic",
+            default_value="robotnik_base_control/cmd_vel",
+            description="cmd_vel topic controller_server/behavior_server publish to"
+        ),
+        # Pair enable_stamped_cmd_vel: false in the *_real.yaml variants with
+        # cmd_vel_topic:=move_base/cmd_vel — the bridge expects plain
+        # geometry_msgs/Twist there, not Nav2 Jazzy's default TwistStamped.
+        DeclareLaunchArgument(
+            "controller_config",
+            default_value=PathJoinSubstitution([
+                FindPackageShare('renee_rbvogui_navigation'),
+                'config/controller_server.yaml'
+            ]),
+            description="controller_server params file"
+        ),
+        DeclareLaunchArgument(
+            "planner_config",
+            default_value=PathJoinSubstitution([
+                FindPackageShare('renee_rbvogui_navigation'),
+                'config/planner_server.yaml'
+            ]),
+            description="planner_server params file"
+        ),
+        DeclareLaunchArgument(
+            "bt_nav_to_pose_xml",
+            default_value=PathJoinSubstitution([
+                FindPackageShare('renee_rbvogui_navigation'),
+                'config/behavior_trees/navigate_to_pose.xml'
+            ]),
+            description="bt_navigator default NavigateToPose behavior tree"
+        ),
+        DeclareLaunchArgument(
+            "behavior_config",
+            default_value=PathJoinSubstitution([
+                FindPackageShare('renee_rbvogui_navigation'),
+                'config/behavior_server.yaml'
+            ]),
+            description="behavior_server params file"
+        ),
+        # Real robot only (navigation_real_entrypoint.sh): the rover's own
+        # safety lasers/PLC are not active, see collision_monitor_real.yaml.
+        DeclareLaunchArgument(
+            "use_collision_monitor",
+            default_value="false",
+            description="Gate Nav2 cmd_vel through nav2_collision_monitor"
+        ),
+        DeclareLaunchArgument(
+            "collision_monitor_config",
+            default_value=PathJoinSubstitution([
+                FindPackageShare('renee_rbvogui_navigation'),
+                'config/collision_monitor_real.yaml'
+            ]),
+            description="collision_monitor params file"
+        ),
+        DeclareLaunchArgument(
+            "collision_mode",
+            default_value="both",
+            description="Lasers feeding the collision monitor: both|front|rear|none"
+        ),
+    ]
 
     # Nav2 core node configurations
 
-    controller_config = PathJoinSubstitution([
-        FindPackageShare('renee_rbvogui_navigation'),
-        'config/controller_server.yaml'
-    ])
+    controller_config = LaunchConfiguration("controller_config")
 
-    planner_config = PathJoinSubstitution([
-        FindPackageShare('renee_rbvogui_navigation'),
-        'config/planner_server.yaml'
-    ])
+    planner_config = LaunchConfiguration("planner_config")
 
     # Nav2 auxiliary node configurations
 
-    behavior_config = PathJoinSubstitution([
-        FindPackageShare('renee_rbvogui_navigation'),
-        'config/behavior_server.yaml'
-    ])
+    behavior_config = LaunchConfiguration("behavior_config")
 
     smoother_config = PathJoinSubstitution([
         FindPackageShare('renee_rbvogui_navigation'),
@@ -66,10 +154,7 @@ def generate_launch_description():
         'config/bt_navigator.yaml'
     ])
 
-    bt_navigator_pose_xml = PathJoinSubstitution([
-        FindPackageShare('renee_rbvogui_navigation'),
-        'config/behavior_trees/navigate_to_pose.xml'
-    ])
+    bt_navigator_pose_xml = LaunchConfiguration("bt_nav_to_pose_xml")
 
     bt_navigator_poses_xml = PathJoinSubstitution([
         FindPackageShare('renee_rbvogui_navigation'),
@@ -85,7 +170,7 @@ def generate_launch_description():
         output='screen',
         parameters=[controller_config, {'use_sim_time': use_sim}],
         remappings=[
-            ('cmd_vel', 'robotnik_base_control/cmd_vel'),
+            ('cmd_vel', nav_cmd_vel_topic),
             ('odom', 'robotnik_base_control/odom'),
         ]
     )
@@ -107,8 +192,8 @@ def generate_launch_description():
         output='screen',
         parameters=[behavior_config, {'use_sim_time': use_sim}],
         remappings=[
-            ('cmd_vel', 'robotnik_base_control/cmd_vel')
-        ] 
+            ('cmd_vel', nav_cmd_vel_topic)
+        ]
     )
 
     smoother_server = Node(
@@ -160,13 +245,34 @@ def generate_launch_description():
         ]
     )
 
+    # Separate lifecycle manager so the sim's node_names list stays untouched.
+    collision_monitor = GroupAction(
+        condition=IfCondition(use_collision_monitor),
+        actions=[
+            OpaqueFunction(function=_collision_monitor,
+                           args=[collision_monitor_config, use_sim]),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_collision_monitor',
+                output='screen',
+                parameters=[{
+                    'use_sim_time': use_sim,
+                    'autostart': True,
+                    'node_names': ['collision_monitor'],
+                }]
+            ),
+        ]
+    )
+
     group = GroupAction([
         controller_server,
         planner_server,
         behavior_server,
         smoother_server,
         bt_navigator,
-        lifecycle_manager_navigation
+        lifecycle_manager_navigation,
+        collision_monitor
     ])
 
-    return LaunchDescription([group])
+    return LaunchDescription(declared_arguments + [group])

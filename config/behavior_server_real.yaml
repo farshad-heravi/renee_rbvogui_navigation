@@ -1,0 +1,37 @@
+/**:
+  behavior_server:
+    ros__parameters:
+      # Real-robot variant of behavior_server.yaml — same two reasons as
+      # controller_server_real.yaml: recovery behaviors (Spin/BackUp/
+      # DriveOnHeading) publish cmd_vel directly, so they need the plain
+      # Twist type the bridge expects on /robot/move_base/cmd_vel, and
+      # use_sim_time: false since there's no /clock on hardware.
+      enable_stamped_cmd_vel: False
+      local_costmap_topic: /robot/local_costmap/costmap_raw
+      global_costmap_topic: /robot/global_costmap/costmap_raw
+      local_footprint_topic: /robot/local_costmap/published_footprint
+      global_footprint_topic: /robot/global_costmap/published_footprint
+      cycle_frequency: 10.0
+      behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
+      spin:
+        plugin: "nav2_behaviors::Spin"
+      backup:
+        plugin: "nav2_behaviors::BackUp"
+      drive_on_heading:
+        plugin: "nav2_behaviors::DriveOnHeading"
+      wait:
+        plugin: "nav2_behaviors::Wait"
+      # Must match local_costmap's global_frame (robot_map in
+      # controller_server_real.yaml): behaviors collision-check the robot pose
+      # in local_frame against local_costmap/costmap_raw, so robot_odom here
+      # puts the pose off the costmap grid whenever map->odom is non-trivial
+      # ("Pose Goes Off Grid" -> every Spin/BackUp fails instantly).
+      local_frame: robot_map
+      global_frame: robot_map
+      robot_base_frame: robot_base_link
+      transform_tolerance: 0.1
+      use_sim_time: false
+      simulate_ahead_time: 2.0
+      max_rotational_vel: 0.1  # was 1.0
+      min_rotational_vel: 0.0  # was 0.4
+      rotational_acc_lim:  0.2 # was 3.2

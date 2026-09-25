@@ -1,0 +1,156 @@
+/**:
+  controller_server:
+    ros__parameters:
+      # Real-robot variant of controller_server.yaml. Two differences from
+      # the sim config, both required for the vogui_ros1_ros2_bridge path:
+      # - enable_stamped_cmd_vel: false — the bridge (bridge.yaml) declares
+      #   /robot/move_base/cmd_vel as plain geometry_msgs/msg/Twist; Nav2
+      #   Jazzy's TwistStamped output under enable_stamped_cmd_vel: true
+      #   would silently never bridge (ROS2 type mismatch).
+      # - local_costmap.use_sim_time: false below — there's no /clock
+      #   publisher on hardware, so the sim value would stall the costmap.
+      enable_stamped_cmd_vel: False
+      controller_frequency: 5.0
+      min_x_velocity_threshold: 0.001
+      min_y_velocity_threshold: 0.001
+      min_theta_velocity_threshold: 0.001
+      failure_tolerance: 0.3
+      odom_topic: /robot/robotnik_base_control/odom
+      progress_checker_plugin: "progress_checker"
+      goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
+      controller_plugins: ["FollowPath"]
+
+      # Progress checker
+      # Scaled to this robot's 0.1 m/s cap (0.05 m/s inside the collision
+      # monitor's slow zone): 0.5 m / 10 s aborted FollowPath every ~10 s
+      # (stop/recover/restart cycle). PoseProgressChecker also counts
+      # rotation as progress, which Simple does not.
+      progress_checker:
+        plugin: "nav2_controller::PoseProgressChecker"
+        required_movement_radius: 0.2
+        required_movement_angle: 0.3
+        movement_time_allowance: 15.0
+
+      # Goal checker
+      general_goal_checker:
+        stateful: True
+        plugin: "nav2_controller::SimpleGoalChecker"
+        xy_goal_tolerance: 0.1
+        # No final spin to fix yaw: the goal heading comes from the Hybrid-A*
+        # path, so 0.05 rad would never be met without rotating in place.
+        # stateful: once xy is inside tolerance only yaw is left, which a car
+        # can't correct over a few cm — 0.15 left it rocking forward/backward
+        # at 10 deg arrival error. Keep this above the typical arrival error.
+        yaw_goal_tolerance: 0.25
+
+      # Dual Ackermann rover: no rotate-in-place anywhere. The previous
+      # RotationShim + DWB spun toward the path at the start (1.58 rad
+      # threshold), picked vx=0/wz trajectories mid-path, and spun to the goal
+      # yaw at the end. RPP only follows the (Hybrid-A*, see
+      # planner_server_real.yaml) path's curvature, forward or in reverse.
+      FollowPath:
+        plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+        desired_linear_vel: 0.1
+        # Velocity-scaled: 0.3 m at 0.1 m/s, down to 0.25 m on the goal
+        # approach, so the last curve is tracked tightly and the rover
+        # arrives close to the goal yaw (a fixed 0.4-0.9 m cut the corner
+        # and arrived ~10 deg off, which it can't fix without turning in place).
+        lookahead_dist: 0.3
+        min_lookahead_dist: 0.25
+        max_lookahead_dist: 0.6
+        lookahead_time: 3.0
+        use_velocity_scaled_lookahead_dist: true
+        min_approach_linear_velocity: 0.03
+        approach_velocity_scaling_dist: 0.4
+        use_collision_detection: true
+        max_allowed_time_to_collision_up_to_carrot: 1.5
+        use_regulated_linear_velocity_scaling: true
+        regulated_linear_scaling_min_radius: 0.9
+        regulated_linear_scaling_min_speed: 0.05
+        use_cost_regulated_linear_velocity_scaling: false
+        use_fixed_curvature_lookahead: false
+        curvature_lookahead_dist: 0.6
+        use_rotate_to_heading: false
+        rotate_to_heading_min_angle: 0.785
+        rotate_to_heading_angular_vel: 0.2
+        max_angular_accel: 0.2
+        allow_reversing: true
+        max_robot_pose_search_dist: 10.0
+        interpolate_curvature_after_goal: false
+        use_cancel_deceleration: true
+        cancel_deceleration: 0.3
+        transform_tolerance: 0.2
+        stateful: true
+
+  local_costmap:
+    local_costmap:
+      ros__parameters:
+        use_sim_time: false
+        update_frequency: 8.0
+        publish_frequency: 8.0
+        global_frame: robot_map
+        robot_base_frame: robot_base_link
+        rolling_window: true
+        width: 8
+        height: 8
+        resolution: 0.025 #resolution: 0.025
+        footprint: "[[0.6,-0.35],[0.6,0.35],[-0.6,0.35],[-0.6,-0.35]]"
+        # RPP collision-checks this padded footprint along the path; 0.15 made
+        # the rover 1.0 m wide and it refused 1.2 m hallways ("detected
+        # collision ahead"). The collision monitor still guards the sides.
+        footprint_padding: 0.03
+        plugins: ["obstacle_layer", "denoise_layer", "inflation_layer"]
+
+        obstacle_layer:
+          plugin: "nav2_costmap_2d::ObstacleLayer"
+          enabled: true
+          footprint_clearing_enabled: true
+          max_obstacle_height: 2.0
+          combination_method: 1
+          observation_sources: front_laser rear_laser
+          front_laser:
+            # Footprint-filtered by localize_real's scan_footprint_filter.
+            topic: /robot/front_laser/scan_filtered
+            observation_persistence: 1.0
+            expected_update_rate: 8.0
+            data_type: "LaserScan"
+            min_obstacle_height: 0.1
+            max_obstacle_height: 1.0
+            inf_is_valid: true
+            marking: true
+            clearing: true
+            obstacle_max_range: 6.0
+            # Above the ~0.29 m self-hit arc the front laser sees on the
+            # robot's own body (scan angles ~121-135 deg).
+            obstacle_min_range: 0.35
+            raytrace_max_range: 5.0
+            raytrace_min_range: 0.15
+          rear_laser:
+            # Rear-right corner laser; needed now that RPP can reverse.
+            # Footprint-filtered by navigation-real's rear filter.
+            topic: /robot/rear_laser/scan_filtered
+            observation_persistence: 1.0
+            expected_update_rate: 8.0
+            data_type: "LaserScan"
+            min_obstacle_height: 0.1
+            max_obstacle_height: 1.0
+            inf_is_valid: true
+            marking: true
+            clearing: true
+            obstacle_max_range: 6.0
+            obstacle_min_range: 0.35
+            raytrace_max_range: 5.0
+            raytrace_min_range: 0.15
+        denoise_layer:
+          plugin: "nav2_costmap_2d::DenoiseLayer"
+          enabled: true
+          minimal_group_size: 10
+          group_connectivity_type: 16
+        inflation_layer:
+          plugin: "nav2_costmap_2d::InflationLayer"
+          # >= inscribed radius (0.35 + padding 0.03 = 0.38 m); below it Nav2
+          # warns at startup and cells overlapping the body don't get
+          # INSCRIBED cost.
+          cost_scaling_factor: 3.0
+          inflation_radius: 0.4
+        always_send_full_costmap: true
