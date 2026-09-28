@@ -94,7 +94,14 @@
         width: 8
         height: 8
         resolution: 0.025 #resolution: 0.025
-        footprint: "[[0.6,-0.35],[0.6,0.35],[-0.6,0.35],[-0.6,-0.35]]"
+        # Measured rover: chassis 1.044 m long, +0.508/-0.532 in base_link
+        # (chassis_link sits 12 mm back); the front 3D scanner under the
+        # chassis adds ~5 cm at the front, and the corner lasers stick 5 cm
+        # out of each side for 0.776 m total width. Robotnik's own ROS1
+        # move_base footprint is [[0.55,±0.38],[-0.55,±0.38]]. Kept symmetric
+        # (rear extended to -0.56, 3 cm past the chassis) so the footprint is
+        # the same driving forward and in reverse.
+        footprint: "[[0.56,-0.39],[0.56,0.39],[-0.56,0.39],[-0.56,-0.39]]"
         # RPP collision-checks this padded footprint along the path; 0.15 made
         # the rover 1.0 m wide and it refused 1.2 m hallways ("detected
         # collision ahead"). The collision monitor still guards the sides.
@@ -148,9 +155,9 @@
           group_connectivity_type: 16
         inflation_layer:
           plugin: "nav2_costmap_2d::InflationLayer"
-          # >= inscribed radius (0.35 + padding 0.03 = 0.38 m); below it Nav2
+          # >= inscribed radius (0.39 + padding 0.03 = 0.42 m); below it Nav2
           # warns at startup and cells overlapping the body don't get
           # INSCRIBED cost.
           cost_scaling_factor: 3.0
-          inflation_radius: 0.4
+          inflation_radius: 0.45
         always_send_full_costmap: true

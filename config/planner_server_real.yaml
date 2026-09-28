@@ -55,7 +55,14 @@
         publish_frequency: 1.0
         global_frame: robot_map
         robot_base_frame: robot_base_link
-        footprint: "[[0.6,-0.35],[0.6,0.35],[-0.6,0.35],[-0.6,-0.35]]"
+        # Measured rover: chassis 1.044 m long, +0.508/-0.532 in base_link
+        # (chassis_link sits 12 mm back); the front 3D scanner under the
+        # chassis adds ~5 cm at the front, and the corner lasers stick 5 cm
+        # out of each side for 0.776 m total width. Robotnik's own ROS1
+        # move_base footprint is [[0.55,±0.38],[-0.55,±0.38]]. Kept symmetric
+        # (rear extended to -0.56, 3 cm past the chassis) so the footprint is
+        # the same driving forward and in reverse.
+        footprint: "[[0.56,-0.39],[0.56,0.39],[-0.56,0.39],[-0.56,-0.39]]"
         footprint_padding: 0.01
         resolution: 0.05
         track_unknown_space: true
@@ -75,7 +82,7 @@
           # 0.75 is the floor (see below); for less wall clearance lower
           # GridBased.cost_penalty instead.
           # Must stay >= the circumscribed radius incl. footprint_padding
-          # (0.708 m), or Smac logs an error on every plan and loses its fast
+          # (hypot(0.57, 0.40) = 0.696 m), or Smac logs an error on every plan and loses its fast
           # collision-check path. Wider clearance: raise the radius or lower
           # cost_scaling_factor (slower cost falloff).
           cost_scaling_factor: 2.0
