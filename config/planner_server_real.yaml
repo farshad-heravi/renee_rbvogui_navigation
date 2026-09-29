@@ -61,12 +61,9 @@
           # pushed paths far from walls and blocked narrow passages; 0.75 m /
           # 3.0 hugged the walls. For less wall clearance lower
           # GridBased.cost_travel_multiplier instead.
-          # The circumscribed-radius floor (hypot(0.57, 0.40) = 0.696 m) was
-          # needed by Hybrid-A*'s footprint check; kept so path costs match
-          # the previous tuning.
-          # 0.70 is that floor (+4 mm margin): the local costmap's 25 cm
-          # band from the side edge (0.64) can't be matched here, so the
-          # global band ends ~31 cm from the side edge (cost ~138 there).
+          # 0.70 is the circumscribed-radius floor (hypot(0.57, 0.40) =
+          # 0.696 m) that Hybrid-A*'s footprint check needed; kept so path
+          # costs match the previous tuning, but SmacPlanner2D can go lower.
           cost_scaling_factor: 2.0
           inflation_radius: 0.70
         always_send_full_costmap: true
