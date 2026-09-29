@@ -1,17 +1,17 @@
 /**:
   planner_server:
     ros__parameters:
-      # Real-robot variant of planner_server.yaml. The rover runs in dual
-      # Ackermann mode, so NavFn's holonomic paths (which ignore the robot's
-      # heading and turning radius) forced the controller to turn in place
-      # at the start, mid-path and at the goal. Hybrid-A* plans from the
-      # current heading to the goal heading with a bounded turning radius,
-      # and Reeds-Shepp lets it back up (3-point turns) instead of spinning.
+      # Real-robot variant of planner_server.yaml. The base turns in place
+      # (see controller_server_real.yaml), so a grid path that ignores
+      # heading and turning radius is fine: RPP pivots toward it at the start
+      # and at sharp corners. The earlier Hybrid-A* Reeds-Shepp setup, made
+      # for car-like steering, planned 3-point turns with reverse segments
+      # that RPP no longer follows (allow_reversing is off).
       expected_planner_frequency: 0.2
       planner_plugins: ["GridBased"]
       costmap_update_timeout: 1.0
       GridBased:
-        plugin: "nav2_smac_planner::SmacPlannerHybrid"
+        plugin: "nav2_smac_planner::SmacPlanner2D"
         downsample_costmap: false
         downsampling_factor: 1
         tolerance: 0.25
@@ -19,34 +19,16 @@
         max_iterations: 1000000
         max_on_approach_iterations: 1000
         max_planning_time: 2.0
-        motion_model_for_search: "REEDS_SHEPP"
-        angle_quantization_bins: 72
-        analytic_expansion_ratio: 3.5
-        analytic_expansion_max_length: 3.0
-        analytic_expansion_max_cost: 200.0
-        analytic_expansion_max_cost_override: false
-        # Dual Ackermann: R = (wheel_base / 2) / tan(max_steer), wheel_base
-        # 0.736 m. 0.8 m ~ 25 deg max steer. Main knob: lower it if paths
-        # take wide detours / many reversals, raise it if the rover can't
-        # follow the curves.
-        minimum_turning_radius: 0.8
-        reverse_penalty: 2.0         # prefer driving forward
-        change_penalty: 0.5          # discourage forward/reverse flip-flops
-        non_straight_penalty: 1.2
-        cost_penalty: 2.0
-        retrospective_penalty: 0.015
-        lookup_table_size: 20.0
-        cache_obstacle_heuristic: false
-        allow_primitive_interpolation: false
-        debug_visualizations: false
-        smooth_path: true
+        # Weight of inflation cost vs. path length (Smac2D default 2.0; the
+        # Hybrid-A* equivalent was cost_penalty). Raise it for more wall
+        # clearance, lower it to hug walls.
+        cost_travel_multiplier: 2.0
+        use_final_approach_orientation: false
         smoother:
           max_iterations: 1000
           w_smooth: 0.3
           w_data: 0.2
           tolerance: 1.0e-10
-          do_refinement: true
-          refinement_num: 2
 
   global_costmap:
     global_costmap:
@@ -73,18 +55,18 @@
           map_subscribe_transient_local: true
         inflation_layer:
           plugin: "nav2_costmap_2d::InflationLayer"
-          # Hybrid-A* collision-checks the full rectangular footprint, so
-          # inflation only shapes path cost. 2.0 m pushed paths far from walls
-          # and blocked narrow passages; 0.75 m / 3.0 hugged the walls; 1.2 m
-          # and 0.9 m were still more than wanted. The radius only truncates
-          # the cost curve (set by cost_scaling_factor), so 0.75 keeps the
-          # same push away from walls up close and frees space beyond it.
-          # 0.75 is the floor (see below); for less wall clearance lower
-          # GridBased.cost_penalty instead.
-          # Must stay >= the circumscribed radius incl. footprint_padding
-          # (hypot(0.57, 0.40) = 0.696 m), or Smac logs an error on every plan and loses its fast
-          # collision-check path. Wider clearance: raise the radius or lower
-          # cost_scaling_factor (slower cost falloff).
+          # SmacPlanner2D treats cells within the inscribed radius (0.39 +
+          # padding) as lethal and uses the rest of the curve as path cost,
+          # so the radius sets how far paths are pushed off walls. 2.0 m
+          # pushed paths far from walls and blocked narrow passages; 0.75 m /
+          # 3.0 hugged the walls. For less wall clearance lower
+          # GridBased.cost_travel_multiplier instead.
+          # The circumscribed-radius floor (hypot(0.57, 0.40) = 0.696 m) was
+          # needed by Hybrid-A*'s footprint check; kept so path costs match
+          # the previous tuning.
+          # 0.70 is that floor (+4 mm margin): the local costmap's 25 cm
+          # band from the side edge (0.64) can't be matched here, so the
+          # global band ends ~31 cm from the side edge (cost ~138 there).
           cost_scaling_factor: 2.0
-          inflation_radius: 0.75
+          inflation_radius: 0.70
         always_send_full_costmap: true

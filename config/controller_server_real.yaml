@@ -35,26 +35,32 @@
       general_goal_checker:
         stateful: True
         plugin: "nav2_controller::SimpleGoalChecker"
-        xy_goal_tolerance: 0.1
-        # No final spin to fix yaw: the goal heading comes from the Hybrid-A*
-        # path, so 0.05 rad would never be met without rotating in place.
-        # stateful: once xy is inside tolerance only yaw is left, which a car
-        # can't correct over a few cm — 0.15 left it rocking forward/backward
-        # at 10 deg arrival error. Keep this above the typical arrival error.
-        yaw_goal_tolerance: 0.25
+        # RPP also reads this as the distance at which it stops driving and
+        # rotates in place to the goal yaw. Too tight and a small overshoot
+        # puts the goal behind the rover, which then spins ~180 deg to drive
+        # back to it (no reversing, see FollowPath).
+        xy_goal_tolerance: 0.15
+        # stateful: once xy is inside tolerance only yaw is left, which RPP
+        # fixes by rotating in place (use_rotate_to_heading).
+        yaw_goal_tolerance: 0.1
 
-      # Dual Ackermann rover: no rotate-in-place anywhere. The previous
-      # RotationShim + DWB spun toward the path at the start (1.58 rad
-      # threshold), picked vx=0/wz trajectories mid-path, and spun to the goal
-      # yaw at the end. RPP only follows the (Hybrid-A*, see
-      # planner_server_real.yaml) path's curvature, forward or in reverse.
+      # The base (RbVoguiHlOmniController, 4WS4WD) turns in place on a pure
+      # wz, so RPP rotates in place toward the path when it points more than
+      # rotate_to_heading_min_angle away (start of path, sharp corners) and
+      # to the goal yaw at the end, then drives the curvature forward only.
+      # The earlier car-like setup (Hybrid-A* Reeds-Shepp + allow_reversing)
+      # rocked forward/backward around the goal for minutes, since a car
+      # can't fix a few cm of lateral or heading error.
       FollowPath:
         plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-        desired_linear_vel: 0.1
-        # Velocity-scaled: 0.3 m at 0.1 m/s, down to 0.25 m on the goal
-        # approach, so the last curve is tracked tightly and the rover
-        # arrives close to the goal yaw (a fixed 0.4-0.9 m cut the corner
-        # and arrived ~10 deg off, which it can't fix without turning in place).
+        desired_linear_vel: 0.15
+        # Velocity-scaled: lookahead_time x speed clamped to 0.25-0.6 m
+        # (0.45 m at 0.15 m/s, 0.25 m on the goal approach), so the last
+        # curve is tracked tightly and the rover arrives close to the goal
+        # yaw (a fixed 0.4-0.9 m cut the corner and arrived ~10 deg off,
+        # leaving a longer final rotation). lookahead_dist is unused while
+        # use_velocity_scaled_lookahead_dist is true; raise max_lookahead_dist
+        # for a longer lookahead.
         lookahead_dist: 0.3
         min_lookahead_dist: 0.25
         max_lookahead_dist: 0.6
@@ -70,11 +76,16 @@
         use_cost_regulated_linear_velocity_scaling: false
         use_fixed_curvature_lookahead: false
         curvature_lookahead_dist: 0.6
-        use_rotate_to_heading: false
+        use_rotate_to_heading: true
         rotate_to_heading_min_angle: 0.785
+        # Slow on purpose: the corners sweep a 0.69 m radius while pivoting,
+        # past the collision monitor's side stop band (0.41 m); RPP's own
+        # footprint check on the local costmap covers the rotation.
         rotate_to_heading_angular_vel: 0.2
-        max_angular_accel: 0.2
-        allow_reversing: true
+        max_angular_accel: 0.1
+        # RPP rejects allow_reversing together with use_rotate_to_heading;
+        # backing out of tight spots is left to the BT's BackUp recovery.
+        allow_reversing: false
         max_robot_pose_search_dist: 10.0
         interpolate_curvature_after_goal: false
         use_cancel_deceleration: true
@@ -157,7 +168,9 @@
           plugin: "nav2_costmap_2d::InflationLayer"
           # >= inscribed radius (0.39 + padding 0.03 = 0.42 m); below it Nav2
           # warns at startup and cells overlapping the body don't get
-          # INSCRIBED cost.
-          cost_scaling_factor: 3.0
-          inflation_radius: 0.45
+          # INSCRIBED cost. 0.43 is just past it, so the band beyond the
+          # body is ~1 cm (cost ~240 there, 0 beyond); scaling 5.0 only
+          # matters if the radius is raised again (0.64 gave a 25 cm band).
+          cost_scaling_factor: 5.0
+          inflation_radius: 0.43 # 0.64
         always_send_full_costmap: true
