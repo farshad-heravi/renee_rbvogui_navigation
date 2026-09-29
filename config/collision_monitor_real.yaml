@@ -50,20 +50,24 @@
       # scanner to +0.56, corner lasers stick out to ±0.388. The hole
       # (±0.65 x ±0.35) hugs the chassis sides so side hits still count;
       # the laser housings only reach past it at the two corners.
-      # Stop: ~0.10 m past the laser housings at the sides (0.49), 0.14 m
-      #       past the scanner in front, 0.16 m behind.
-      # Slow: ~0.30 m past the laser housings at the sides (0.69), 0.34 m
-      #       in front, 0.36 m behind.
+      # Slow: ~0.10 m past the laser housings at the sides (0.49), 0.14 m
+      #       past the scanner in front, 0.16 m behind (laser -> edge: 0.15 m
+      #       sides, 0.23 m front, 0.21 m rear).
+      # Stop: half the Slow laser -> edge distance at the sides (0.41, ~2 cm
+      #       past the laser housings). Front/back can't be halved (it would
+      #       land inside the hole, which must clear the scanner and the stray
+      #       point), so there it is a thin band just outside the hole (0.67).
       # Measured from the body, not the lasers: the lasers sit at opposite
       # corners (~(0.47, 0.34) front, ~(-0.49, -0.34) rear, from the
       # robot's TF), so circles around them would leave the front-right and
       # rear-left of the body uncovered.
       # Previously +0.20/+0.15 (stop) and +0.50/+0.40 (slow); then sides
-      # 0.45/0.65, which left only 6 cm past the laser housings.
+      # 0.45/0.65, which left only 6 cm past the laser housings; then stop
+      # 0.70 x 0.49 and slow 0.90 x 0.69.
       polygons: ["FrontStop", "FrontSlow", "RearStop", "RearSlow"]
       FrontStop:
         type: polygon
-        points: "[[0.7,0],[0.7,0.49],[-0.7,0.49],[-0.7,-0.49],[0.7,-0.49],[0.7,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
+        points: "[[0.67,0],[0.67,0.41],[-0.67,0.41],[-0.67,-0.41],[0.67,-0.41],[0.67,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
         action_type: stop
         sources_names: ["front_scan"]
         # >1 so a single spurious return can't stop the robot
@@ -73,7 +77,7 @@
         enabled: true
       FrontSlow:
         type: polygon
-        points: "[[0.9,0],[0.9,0.69],[-0.9,0.69],[-0.9,-0.69],[0.9,-0.69],[0.9,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
+        points: "[[0.7,0],[0.7,0.49],[-0.7,0.49],[-0.7,-0.49],[0.7,-0.49],[0.7,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
         action_type: slowdown
         slowdown_ratio: 0.5
         sources_names: ["front_scan"]
@@ -83,7 +87,7 @@
         enabled: true
       RearStop:
         type: polygon
-        points: "[[0.7,0],[0.7,0.49],[-0.7,0.49],[-0.7,-0.49],[0.7,-0.49],[0.7,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
+        points: "[[0.67,0],[0.67,0.41],[-0.67,0.41],[-0.67,-0.41],[0.67,-0.41],[0.67,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
         action_type: stop
         sources_names: ["rear_scan"]
         min_points: 3
@@ -92,7 +96,7 @@
         enabled: true
       RearSlow:
         type: polygon
-        points: "[[0.9,0],[0.9,0.69],[-0.9,0.69],[-0.9,-0.69],[0.9,-0.69],[0.9,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
+        points: "[[0.7,0],[0.7,0.49],[-0.7,0.49],[-0.7,-0.49],[0.7,-0.49],[0.7,0],[0.65,0],[0.65,-0.35],[-0.65,-0.35],[-0.65,0.35],[0.65,0.35],[0.65,0]]"
         action_type: slowdown
         slowdown_ratio: 0.5
         sources_names: ["rear_scan"]
