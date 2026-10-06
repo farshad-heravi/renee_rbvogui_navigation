@@ -10,6 +10,8 @@
     <plugin name="gz::sim::systems::Physics" filename="libgz-sim-physics-system.so"/>
     <plugin name="gz::sim::systems::UserCommands" filename="libgz-sim-user-commands-system.so"/>
     <plugin name="gz::sim::systems::SceneBroadcaster" filename="libgz-sim-scene-broadcaster-system.so"/>
+    <!-- IMU sensors (the base IMU and the wrist ZED's) only publish with this system. -->
+    <plugin name="gz::sim::systems::Imu" filename="libgz-sim-imu-system.so"/>
     <plugin name="gz::sim::systems::Sensors" filename="libgz-sim-sensors-system.so">
     <render_engine>ogre2</render_engine>
     </plugin>
@@ -147,85 +149,5 @@
         </visual>
       </link>
     </model>
-
-    <!--
-      Tooling for generating a thin mapping outline of the Campetella machine.
-    -->
-    <!-- <model name="campetella_mapping_outline">
-      <static>true</static>
-      <pose>1.0 0.0 0.0 0 0 0</pose>
-
-      <link name="north_edge">
-        <pose>-1.17275 0.34705 0.15 0 0 0</pose>
-        <collision name="collision">
-          <geometry>
-            <box><size>3.3455 0.05 0.30</size></box>
-          </geometry>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <box><size>3.3455 0.05 0.30</size></box>
-          </geometry>
-          <material>
-            <ambient>0.35 0.35 0.35 1</ambient>
-            <diffuse>0.35 0.35 0.35 1</diffuse>
-          </material>
-        </visual>
-      </link>
-
-      <link name="south_edge">
-        <pose>-1.17275 -1.21385 0.15 0 0 0</pose>
-        <collision name="collision">
-          <geometry>
-            <box><size>3.3455 0.05 0.30</size></box>
-          </geometry>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <box><size>3.3455 0.05 0.30</size></box>
-          </geometry>
-          <material>
-            <ambient>0.35 0.35 0.35 1</ambient>
-            <diffuse>0.35 0.35 0.35 1</diffuse>
-          </material>
-        </visual>
-      </link>
-
-      <link name="west_edge">
-        <pose>-2.8455 -0.4334 0.15 0 0 0</pose>
-        <collision name="collision">
-          <geometry>
-            <box><size>0.05 1.5609 0.30</size></box>
-          </geometry>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <box><size>0.05 1.5609 0.30</size></box>
-          </geometry>
-          <material>
-            <ambient>0.35 0.35 0.35 1</ambient>
-            <diffuse>0.35 0.35 0.35 1</diffuse>
-          </material>
-        </visual>
-      </link>
-
-      <link name="east_edge">
-        <pose>0.5 -0.4334 0.15 0 0 0</pose>
-        <collision name="collision">
-          <geometry>
-            <box><size>0.05 1.5609 0.30</size></box>
-          </geometry>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <box><size>0.05 1.5609 0.30</size></box>
-          </geometry>
-          <material>
-            <ambient>0.35 0.35 0.35 1</ambient>
-            <diffuse>0.35 0.35 0.35 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model> -->
   </world>
 </sdf>
